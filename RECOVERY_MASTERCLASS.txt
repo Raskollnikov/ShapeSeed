@@ -1,0 +1,49 @@
+VERY IMPORTANT!!!
+
+SHAPESEED RECOVERY ALGORITHM v1
+
+INPUTS:
+  - Layer A bitmap: 256 bits on a 32×8 grid
+  - Layer B bitmap: 256 bits on a 32×8 grid  
+  - Noise bitmap:   up to 10 bits on same grid
+  - PIN:            your memorable string
+
+STEP 1 - MERGE
+  For each of the 256 bit positions:
+  merged[i] = LayerA[i] XOR LayerB[i] XOR Noise[i]
+  Result: 256 bits
+
+STEP 2 - BIT TO BYTES MAPPING
+  Bit 255 (top-left cell) = MSB of byte[0]
+  Bit 248 = LSB of byte[0]
+  Bit 247 = MSB of byte[1]
+  ...
+  Bit 0 (bottom-right cell) = LSB of byte[31]
+  Result: 32 bytes
+
+STEP 3A - BASIC MODE (no PIN)
+  entropy_bytes = those 32 bytes directly
+  
+STEP 3B - ADVANCED MODE (with PIN)
+  entropy_bytes = Argon2id(
+    password   = PIN as UTF-8 bytes,
+    salt       = the 32 merged bytes from step 2,
+    memory     = 65536 KiB  (64 MB),
+    iterations = 3,
+    parallelism= 1,
+    hashLength = 32 bytes,
+    type       = Argon2id
+  )
+
+STEP 4 - BIP39 CHECKSUM
+  checksum_hash = SHA-256(entropy_bytes)
+  take first 8 bits of checksum_hash[0]
+
+STEP 5 - BUILD 264 BITS
+  all_bits = entropy_bits (MSB first) + 8 checksum bits
+  = 264 bits total
+
+STEP 6 - WORD MAPPING
+  split 264 bits into 24 chunks of 11 bits each
+  each chunk → integer 0-2047 → BIP39 word
+  use standard BIP39 English wordlist

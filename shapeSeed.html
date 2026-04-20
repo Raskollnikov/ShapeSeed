@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'none';"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'none';"
     />
     <title>PATTERN WALLET - Shape Key Generator</title>
     <style>
@@ -319,6 +319,9 @@
         flex-direction: column;
         gap: 14px;
       }
+      .output-panel {
+        grid-column: 1 / -1;
+      }
       .anchor-legend {
         font-size: 0.6rem;
         color: var(--dim);
@@ -326,19 +329,6 @@
         letter-spacing: 0.5px;
       }
       .anchor-legend strong {
-        color: var(--amber);
-      }
-      .noise-tip {
-        background: rgba(255, 170, 0, 0.05);
-        border: 1px solid rgba(255, 170, 0, 0.15);
-        padding: 10px;
-        font-size: 0.6rem;
-        color: var(--dim);
-        line-height: 1.7;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-      }
-      .noise-tip strong {
         color: var(--amber);
       }
       .output-panel {
@@ -384,8 +374,7 @@
         line-height: 1.8;
         letter-spacing: 0.5px;
         margin-top: 8px;
-        max-height: 320px;
-        overflow-y: auto;
+        overflow: visible;
       }
       .step-detail .hi {
         color: var(--white);
@@ -517,6 +506,21 @@
         border-color: var(--green);
         color: var(--green);
         background: var(--gfaint);
+      }
+
+      .wrap > .panel:first-child,
+      .wrap > .ctrl-row,
+      .wrap > canvas,
+      .wrap > .canvas-meta,
+      .wrap > .ent-section,
+      .wrap > .stamps,
+      .wrap > .btn-row {
+        grid-column: 1;
+      }
+
+      .right-col {
+        grid-column: 2;
+        grid-row: 1 / span 10;
       }
     </style>
     <script src="argon2-bundled.min.js"></script>
@@ -670,104 +674,105 @@
         <div class="btn danger" onclick="clearAll()">CLR ALL</div>
         <div class="btn" onclick="saveStamp()">EXPORT STAMP</div>
       </div>
-    </div>
-    <div class="right-col">
-      <div class="panel">
-        <div class="ptitle">
-          <span>DERIVE <span class="hi">MODE</span></span>
-        </div>
-        <div class="mode-toggle">
-          <div class="mtab basic on" id="modeBasic" onclick="setMode('basic')">
-            ◼ BASIC<br /><small style="font-size: 0.48rem; opacity: 0.7"
-              >XOR ONLY</small
-            >
-          </div>
-          <div class="mtab" id="modeAdv" onclick="setMode('advanced')">
-            ◆ ADVANCED<br /><small style="font-size: 0.48rem; opacity: 0.7"
-              >PIN</small
-            >
-          </div>
-        </div>
 
-        <div id="advPanel" style="display: none">
-          <div class="adv-panel">
-            <div class="adv-title">◆ ADVANCED MODE</div>
+      <div class="right-col">
+        <div class="panel">
+          <div class="ptitle">
+            <span>DERIVE <span class="hi">MODE</span></span>
+          </div>
+          <div class="mode-toggle">
+            <div
+              class="mtab basic on"
+              id="modeBasic"
+              onclick="setMode('basic')"
+            >
+              ◼ BASIC<br /><small style="font-size: 0.48rem; opacity: 0.7"
+                >XOR ONLY</small
+              >
+            </div>
+            <div class="mtab" id="modeAdv" onclick="setMode('advanced')">
+              ◆ ADVANCED<br /><small style="font-size: 0.48rem; opacity: 0.7"
+                >PIN</small
+              >
+            </div>
+          </div>
 
-            <div class="adv-row">
-              <div class="adv-label">
-                SALT / PIN <span>(memorable number, never stored)</span>
+          <div id="advPanel" style="display: none">
+            <div class="adv-panel">
+              <div class="adv-title">◆ ADVANCED MODE</div>
+
+              <div class="adv-row">
+                <div class="adv-label">
+                  SALT / PIN <span>(memorable number, never stored)</span>
+                </div>
+                <input
+                  class="adv-input"
+                  id="saltInput"
+                  type="text"
+                  inputmode="text"
+                  placeholder="e.g. 19841207 or 4892"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
               </div>
-              <input
-                class="adv-input"
-                id="saltInput"
-                type="text"
-                inputmode="text"
-                placeholder="e.g. 19841207 or 4892"
-                autocomplete="off"
-                spellcheck="false"
-              />
-            </div>
-            <div class="adv-info">
-              <strong>What it does:</strong> Your PIN is processed with Argon2id
-              using your XOR bitmap as salt. Argon2id(PIN, salt=shape_bits,
-              mem=64MB, t=3). Same PIN + same drawing = same mnemonic, always.
-              Two users with identical drawings get totally different mnemonics.
-              Prevents rainbow table attacks.<br /><br />
-              <strong>If you forget the PIN</strong> -> wallet is permanently
-              inaccessible. Write it physically, separately from your shape
-              description.
-            </div>
+              <div class="adv-info">
+                PIN + drawing -> same mnemonic always.<br />
+                Different PIN = completely different wallet.<br />
+                <strong>Forget PIN = permanent loss.</strong> Write it
+                physically.
+              </div>
 
-            <div class="adv-divider"></div>
+              <div class="adv-divider"></div>
 
-            <div class="adv-info" id="derivInfo">
-              <strong>XOR->DIRECT:</strong> XOR bits split directly into 11-bit
-              chunks -> BIP39 words. Fast, fully transparent, reversible to your
-              drawing.<br /><br />
-              <strong>SHA256 mode:</strong> Argon2id(PIN, salt=XOR_bytes,
-              mem=64MB, t=3) -> 256 bits -> 11-bit chunks. Memory-hard,
-              GPU-resistant. Recommended when using a PIN.
+              <div class="adv-info">
+                <strong>BASIC:</strong> XOR bits -> BIP39 directly.<br />
+                <strong>ADVANCED:</strong> Argon2id(PIN, salt=XOR, 64MB, t=3) ->
+                BIP39.
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="panel">
-          <div class="ptitle">
-            <span>NOISE <span class="hi">ANCHOR SYSTEM</span></span>
+          <div class="panel">
+            <div class="ptitle">
+              <span>NOISE <span class="hi">ANCHORS</span></span>
+              <span
+                id="noiseCount"
+                style="color: var(--amber); font-size: 0.6rem"
+                >0/10</span
+              >
+            </div>
+            <div
+              class="duress-info"
+              style="font-size: 0.56rem; line-height: 1.7"
+            >
+              Place relative to corners.<br />
+              <span style="color: var(--amber)">TL</span> 2R 1D &nbsp;
+              <span style="color: var(--amber)">TR</span> 3L 2D<br />
+              <span style="color: var(--amber)">BL</span> 1R 2U &nbsp;
+              <span style="color: var(--amber)">BR</span> 2L 1U
+            </div>
           </div>
-          <div class="noise-tip">
-            <strong>10 noise bits</strong> - place relative to corners, not
-            absolute coords.<br /><br />
-            Example model:<br />
-            <strong>TL:</strong> 2R 1D from top-left<br />
-            <strong>TR:</strong> 3L 2D from top-right<br />
-            <strong>BL:</strong> 1R 2U from btm-left<br />
-            <strong>BR:</strong> 2L 1U from btm-right<br /><br />
-            Switch to <strong>NOISE layer</strong> - corner zones highlighted.
-            Max 10 bits.
-          </div>
-          <div class="anchor-legend" id="noiseCount">
-            Noise bits placed: <strong>0 / 10</strong>
-          </div>
-        </div>
 
-        <div class="panel">
-          <div class="ptitle">
-            <span>SECURITY <span class="hi">MODEL</span></span>
-          </div>
-          <div class="duress-info" style="font-size: 0.58rem; line-height: 1.9">
-            <strong style="color: var(--cyan)">Basic mode:</strong> XOR bits ->
-            11-chunk -> BIP39<br />
-            <strong style="color: var(--cyan)">Advanced mode:</strong>
-            Argon2id(PIN, salt=XOR, 64MB, t=3) -> BIP39<br />
-            <strong style="color: var(--cyan)">Checksum:</strong> First 8 bits
-            of SHA-256(entropy)<br />
-            <strong style="color: var(--cyan)">Mnemonic:</strong> BIP39, 24
-            words (264 bits)<br /><br />
+          <div class="panel">
+            <div class="ptitle">
+              <span>SECURITY <span class="hi">MODEL</span></span>
+            </div>
+            <div
+              class="duress-info"
+              style="font-size: 0.56rem; line-height: 1.9"
+            >
+              <span style="color: var(--cyan)">BASIC:</span> XOR -> 11-bit ->
+              BIP39<br />
+              <span style="color: var(--cyan)">ADVANCED:</span>
+              Argon2id(PIN,salt=XOR) -> BIP39<br />
+              <span style="color: var(--cyan)">CHECKSUM:</span>
+              SHA256(entropy)[0:8]<br />
+              <span style="color: var(--cyan)">OUTPUT:</span> 24 words · 264
+              bits
+            </div>
           </div>
         </div>
       </div>
-
       <div class="panel output-panel">
         <div class="ptitle">
           <span
@@ -3242,7 +3247,7 @@
           MERGED: "MERGED PREVIEW (A⊕B⊕NOISE)",
         };
         document.getElementById("layerLabel").textContent = labels[l];
-        if (splitGuide) draw();
+        draw();
       }
       function setBrush(n) {
         brushSize = n;
@@ -3250,6 +3255,7 @@
           document.getElementById("brush" + i).classList.remove("on"),
         );
         document.getElementById("brush" + n).classList.add("on");
+        draw();
       }
       function toggleErase() {
         eraseMode = !eraseMode;
@@ -3343,8 +3349,7 @@
         document.getElementById("bitsSetLabel").textContent =
           bits + " / 256 BITS";
         const nc = layers.NOISE.reduce((s, v) => s + v, 0);
-        document.getElementById("noiseCount").innerHTML =
-          `Noise bits placed: <strong>${nc} / 10</strong>`;
+        document.getElementById("noiseCount").textContent = nc + "/10";
         updateEntropy();
       }
 
@@ -3444,100 +3449,102 @@
       async function deriveKey() {
         const btn = document.getElementById("btnDerive");
         btn.textContent =
-          currentMode === "advanced" ? "⏳ HASHING..." : "▶ DERIVE KEY";
+          currentMode === "advanced" ? "HASHING..." : "DERIVE KEY";
         btn.style.opacity = "0.6";
         btn.style.pointerEvents = "none";
         await new Promise((r) => setTimeout(r, 10));
-        const merged = getMergedBits();
-        const pin = document.getElementById("saltInput").value.trim();
-        let entropyBits;
-        let derivationNote;
 
-        if (currentMode === "advanced") {
-          const xorBytes = bitsToBytes(merged);
+        try {
+          const merged = getMergedBits();
+          const pin = document.getElementById("saltInput").value.trim();
+          let entropyBits;
+          let derivationNote;
 
-          if (!pin) {
-            document.getElementById("stepDetail").innerHTML =
-              '<span style="color:var(--red)">▲ ADVANCED MODE REQUIRES A PIN. Enter a PIN first.</span>';
-            return;
+          if (currentMode === "advanced") {
+            const xorBytes = bitsToBytes(merged);
+
+            if (!pin) {
+              document.getElementById("stepDetail").innerHTML =
+                '<span style="color:var(--red)"> ADVANCED MODE REQUIRES A PIN. Enter a PIN first.</span>';
+              showOutTab("Steps", document.querySelectorAll(".otab")[2]);
+              return;
+            }
+
+            const argon2Result = await argon2.hash({
+              pass: pin,
+              salt: xorBytes,
+              time: 3,
+              mem: 65536,
+              hashLen: 32,
+              parallelism: 1,
+              type: argon2.ArgonType.Argon2id,
+            });
+
+            const hashResult = argon2Result.hash;
+            entropyBits = new Uint8Array(256);
+            for (let byteIdx = 0; byteIdx < 32; byteIdx++) {
+              for (let bit = 0; bit < 8; bit++) {
+                const bitNum = 255 - (byteIdx * 8 + bit);
+                entropyBits[bitNum] = (hashResult[byteIdx] >> (7 - bit)) & 1;
+              }
+            }
+            derivationNote = `Argon2id(PIN, salt=XOR_bytes, mem=64MB, t=3) -> 256 bits entropy`;
+          } else {
+            entropyBits = merged;
+            derivationNote = "XOR(A⊕B⊕NOISE) -> direct 11-bit chunking";
           }
 
-          const argon2Result = await argon2.hash({
-            pass: pin,
-            salt: xorBytes,
-            time: 3,
-            mem: 65536,
-            hashLen: 32,
-            parallelism: 1,
-            type: argon2.ArgonType.Argon2id,
+          const entropyBytes = bitsToBytes(entropyBits);
+          const hex = Array.from(entropyBytes)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+          const checksumHash = await sha256(entropyBytes);
+          const checkByte = checksumHash[0];
+          const checkBits = new Uint8Array(8);
+          for (let i = 0; i < 8; i++) checkBits[i] = (checkByte >> (7 - i)) & 1;
+
+          const allBits = new Uint8Array(264);
+          for (let bitNum = 255; bitNum >= 0; bitNum--) {
+            allBits[255 - bitNum] = entropyBits[bitNum];
+          }
+          allBits.set(checkBits, 256);
+
+          const wordIndices = [];
+          for (let w = 0; w < 24; w++) {
+            let val = 0;
+            for (let b = 0; b < 11; b++) val = (val << 1) | allBits[w * 11 + b];
+            wordIndices.push(val);
+          }
+
+          document.getElementById("hexVal").textContent = hex;
+          document.getElementById("binVal").textContent = toBinStr(entropyBits);
+
+          const wg = document.getElementById("wordGrid");
+          wg.innerHTML = "";
+          wordIndices.forEach((idx, i) => {
+            const word = WORDLIST[idx] || `?${idx}`;
+            const chip = document.createElement("div");
+            chip.className = "word-chip";
+            chip.innerHTML = `<span class="wn">${i + 1}</span><span class="ww">${word}</span>`;
+            wg.appendChild(chip);
           });
 
-          const hashResult = argon2Result.hash;
+          const hashHex = Array.from(checksumHash)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          const chunks = Array.from({ length: 24 }, (_, w) => {
+            let s = "";
+            for (let b = 0; b < 11; b++) s += allBits[w * 11 + b];
+            return s;
+          });
 
-          entropyBits = new Uint8Array(256);
-          for (let byteIdx = 0; byteIdx < 32; byteIdx++) {
-            for (let bit = 0; bit < 8; bit++) {
-              const bitNum = 255 - (byteIdx * 8 + bit);
-              entropyBits[bitNum] = (hashResult[byteIdx] >> (7 - bit)) & 1;
-            }
-          }
-          derivationNote = `Argon2id(PIN, salt=XOR_bytes, mem=64MB, t=3) -> 256 bits entropy`;
-        } else {
-          entropyBits = merged;
-          derivationNote = "XOR(A⊕B⊕NOISE) -> direct 11-bit chunking";
-        }
+          const modeLabel =
+            currentMode === "advanced"
+              ? `ADVANCED - Argon2id(PIN, salt=XOR, mem=64MB, t=3)`
+              : "BASIC - XOR DIRECT";
 
-        const entropyBytes = bitsToBytes(entropyBits);
-        const hex = Array.from(entropyBytes)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-
-        const checksumHash = await sha256(entropyBytes);
-        const checkByte = checksumHash[0];
-        const checkBits = new Uint8Array(8);
-        for (let i = 0; i < 8; i++) checkBits[i] = (checkByte >> (7 - i)) & 1;
-
-        const allBits = new Uint8Array(264);
-        for (let bitNum = 255; bitNum >= 0; bitNum--) {
-          allBits[255 - bitNum] = entropyBits[bitNum];
-        }
-        allBits.set(checkBits, 256);
-
-        const wordIndices = [];
-        for (let w = 0; w < 24; w++) {
-          let val = 0;
-          for (let b = 0; b < 11; b++) val = (val << 1) | allBits[w * 11 + b];
-          wordIndices.push(val);
-        }
-
-        document.getElementById("hexVal").textContent = hex;
-        document.getElementById("binVal").textContent = toBinStr(entropyBits);
-
-        const wg = document.getElementById("wordGrid");
-        wg.innerHTML = "";
-        wordIndices.forEach((idx, i) => {
-          const word = WORDLIST[idx] || `?${idx}`;
-          const chip = document.createElement("div");
-          chip.className = "word-chip";
-          chip.innerHTML = `<span class="wn">${i + 1}</span><span class="ww">${word}</span>`;
-          wg.appendChild(chip);
-        });
-
-        const hashHex = Array.from(checksumHash)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-        const chunks = Array.from({ length: 24 }, (_, w) => {
-          let s = "";
-          for (let b = 0; b < 11; b++) s += allBits[w * 11 + b];
-          return s;
-        });
-
-        const modeLabel =
-          currentMode === "advanced"
-            ? `ADVANCED - Argon2id(PIN, salt=XOR, mem=64MB, t=3)`
-            : "BASIC - XOR DIRECT";
-
-        document.getElementById("stepDetail").innerHTML = `
+          document.getElementById("stepDetail").innerHTML = `
 <span class="hi">DERIVATION MODE: ${modeLabel}</span><br>
 <span style="color:var(--dim)">${derivationNote}</span><br><br>
 <span class="hi">STEP 1 - ENTROPY SOURCE (256 BITS)</span><br>
@@ -3546,16 +3553,26 @@
 Full hash: <span class="ha">${hashHex.toUpperCase()}</span><br>
 Checksum byte[0]: <span class="ha">${checkByte.toString(16).padStart(2, "0").toUpperCase()}</span> -> bits: <span class="ha">${checkBits.join("")}</span><br><br>
 <span class="hi">STEP 3 - ALL BITS = ENTROPY ∥ CHECKSUM (264 bits = 24 × 11)</span><br>
-<span style="color:var(--dim);font-size:0.55rem">Bit 255 (MSB) first. Each 11-bit chunk -> BIP39 word index (0–2047)</span><br><br>
+<span style="color:var(--dim);font-size:0.55rem">Bit 255 (MSB) first. Each 11-bit chunk -> BIP39 word index (0-2047)</span><br><br>
 <span class="hi">STEP 4 - 11-BIT CHUNKS -> INDEX -> WORD</span><br>
 ${chunks.map((b, i) => `<span style="color:var(--dim);font-size:.55rem">${String(i + 1).padStart(2, " ")}</span> <span class="ha">${b}</span> = <span style="color:var(--white)">${wordIndices[i].toString().padStart(4, " ")}</span> = <span style="color:var(--green)">${WORDLIST[wordIndices[i]] || "?"}</span>`).join("<br>")}<br><br>
 <span class="hi">RESULT - 24-WORD BIP39 MNEMONIC</span><br>
 <span style="color:var(--green)">${wordIndices.map((idx) => WORDLIST[idx] || "?").join(" ")}</span>
 `;
 
-        btn.textContent = "DERIVE KEY";
-        btn.style.opacity = "";
-        btn.style.pointerEvents = "";
+          document
+            .querySelector(".output-panel")
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+          showOutTab("Words", document.querySelectorAll(".otab")[1]);
+        } catch (err) {
+          document.getElementById("stepDetail").innerHTML =
+            `<span style="color:var(--red)">▲ ERROR: ${err.message || err}</span>`;
+          showOutTab("Steps", document.querySelectorAll(".otab")[2]);
+        } finally {
+          btn.textContent = "DERIVE KEY";
+          btn.style.opacity = "";
+          btn.style.pointerEvents = "";
+        }
       }
 
       window.addEventListener("resize", resize);

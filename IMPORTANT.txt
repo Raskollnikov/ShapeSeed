@@ -1,0 +1,62 @@
+PRINT IT ASAP
+
+╔══════════════════════════════════════════════════════════╗
+║         SHAPESEED WALLET RECOVERY PROTOCOL               ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  WHAT YOU NEED:                                          ║
+║  1. A browser (any modern browser, any OS)               ║
+║  2. The shapeSeed.html file + argon2-bundled.min.js      ║
+║     (or reconstruct from spec below)                     ║
+║  3. Your shape description (stored separately)           ║
+║  4. Your PIN (memorized or stored separately)            ║
+║                                                          ║
+║  IF THE FILES ARE LOST - RECONSTRUCTION SPEC:            ║
+║                                                          ║
+║  Any developer can rebuild this in ~2 hours:             ║
+║                                                          ║
+║  1. Get argon2-browser WASM library                      ║
+║     github.com/antelle/argon2-browser                    ║
+║     (or npm: argon2-browser)                             ║
+║                                                          ║
+║  2. Implement the grid:                                  ║
+║     32 columns × 8 rows = 256 cells                      ║
+║     Top-left = bit 255 (MSB)                             ║
+║     Bottom-right = bit 0 (LSB)                           ║
+║     Linear position = row × 32 + col                     ║
+║     Bit number = 255 - linear_position                   ║
+║                                                          ║
+║  3. Implement XOR merge:                                 ║
+║     merged[i] = A[i] XOR B[i] XOR Noise[i]               ║
+║                                                          ║
+║  4. Convert bits to 32 bytes:                            ║
+║     for byteIdx 0..31:                                   ║
+║       for bitInByte 0..7:                                ║
+║         bitNum = 255 - (byteIdx*8 + bitInByte)           ║
+║         byte = (byte << 1) | merged[bitNum]              ║
+║                                                          ║
+║  5. Argon2id call:                                       ║
+║     pass     = PIN (UTF-8)                               ║
+║     salt     = those 32 bytes                            ║
+║     memory   = 65536 KiB                                 ║
+║     time     = 3                                         ║
+║     parallel = 1                                         ║
+║     hashLen  = 32                                        ║
+║     type     = Argon2id                                  ║
+║                                                          ║
+║  6. BIP39 standard:                                      ║
+║     checksum = SHA256(entropy)[0:8 bits]                 ║
+║     264 bits → 24 × 11 bits → BIP39 word index           ║
+║     Standard English BIP39 wordlist (2048 words)         ║
+║     github.com/trezor/python-mnemonic/wordlist           ║
+║                                                          ║
+║  VERIFICATION TEST:                                      ║
+║  Empty drawing (all zeros) + PIN="a" must produce:       ║
+║  9bbe203c1f68df66355d238983271bee02a0402b                ║
+║  9270dc03220e2aeb7d77befe                                ║
+║                                                          ║
+║  Words: option valve audit disagree mistake reason       ║
+║         step piece maze bomb shoulder swing claw         ║
+║         cactus purity evoke swing boil logic fiction     ║
+║         result rookie winner that                        ║
+╚══════════════════════════════════════════════════════════╝
