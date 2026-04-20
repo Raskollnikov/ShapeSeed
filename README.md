@@ -185,25 +185,47 @@ it is also not a brain wallet in the traditional sense. Traditional brain wallet
 My Approach
 
 first shape 
-<img width="1527" height="583" alt="image" src="https://github.com/user-attachments/assets/95744b44-65c0-4381-939b-201eed97d93e" />
+<img width="1828" height="998" alt="image" src="https://github.com/user-attachments/assets/825c83df-6ea6-4e18-a886-39faafdcb7c6" />
+
 
 second shape
-<img width="1527" height="583" alt="image" src="https://github.com/user-attachments/assets/10ef8d93-e416-43eb-8c46-3bd9e95474bd" />
+<img width="1828" height="998" alt="image" src="https://github.com/user-attachments/assets/7d46ff17-7e00-4ae7-85a3-62227478fd7e" />
 
-merged
-<img width="1527" height="583" alt="image" src="https://github.com/user-attachments/assets/d5d2f704-97af-4511-a980-a37fc13b4b5d" />
 
-<img width="1527" height="583" alt="image" src="https://github.com/user-attachments/assets/a22e170a-f385-4365-8393-d9d3dc6fd12f" />
+merged 
+<img width="1828" height="998" alt="image" src="https://github.com/user-attachments/assets/28abde99-694a-4bca-86ee-473cb7b59a62" />
 
-<img width="1801" height="900" alt="image" src="https://github.com/user-attachments/assets/fe28d194-0638-44b9-8dc9-e0df8be49a28" />
+it says first148 btw haha 
 
-<img width="1812" height="803" alt="image" src="https://github.com/user-attachments/assets/bd229860-8447-4863-91f2-ae5e8314033d" />
 
-<img width="420" height="283" alt="image" src="https://github.com/user-attachments/assets/2a025aff-392c-40ea-b438-537dbba01fd1" />
 
-<img width="793" height="252" alt="image" src="https://github.com/user-attachments/assets/ae0e64e6-3925-4609-8d3e-d75b3c18dbdc" />
+we can derive the seed from that shape directly 
+
+<img width="1828" height="998" alt="image" src="https://github.com/user-attachments/assets/49a17467-b222-4bab-86cd-97f6f80b6f75" />
+<img width="1828" height="998" alt="image" src="https://github.com/user-attachments/assets/fe7631b8-e2e2-416f-841e-0797c2104876" />
+
+<img width="1159" height="248" alt="image" src="https://github.com/user-attachments/assets/17647d0e-b848-4795-8807-3257a68a9300" />
+
+for verification i passed the hex on [iancoleman](https://iancoleman.io/bip39/) official website and got same words like mine  
+
+tube tomorrow fire amateur angle prevent choose december fee extend cannon right park drama impulse drum picture picture loud emerge emerge attack multiply mass
+
+<img width="1776" height="945" alt="image" src="https://github.com/user-attachments/assets/62df5a9a-ee74-4489-90fa-e608b2641c4f" />
+<img width="1776" height="945" alt="image" src="https://github.com/user-attachments/assets/b06a03a3-d3b0-44af-bc49-a87f45ad87fc" />
+
 
 Dont use shapes like it ( it's too simple ) 
+
+
+in Advanced mode i am testing the Argon2id using empty grid with all zeros + pin which is 'a' 
+
+<img width="1769" height="992" alt="image" src="https://github.com/user-attachments/assets/00ff8824-3a4a-4c80-b680-cbb86aec8f0d" />
+<img width="1782" height="992" alt="image" src="https://github.com/user-attachments/assets/dd39afa8-a24c-4747-a85b-59bf2e529d27" />
+
+As you see they match ( these means that both BIPS0039 + Argon2id are implemented correctly :)) )
+
+<img width="1782" height="992" alt="image" src="https://github.com/user-attachments/assets/d308e671-640b-48bd-9161-8f1b2bb33b25" />
+
 
 generating the seed using pass is 100x more secured because it uses Argon2id
 ---
