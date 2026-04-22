@@ -2,8 +2,50 @@
 # ShapeSeed - Spy Wallet
 
 > Draw your Bitcoin key. Remember it forever. Leave no trace.
+
+!IMPORTANT
+Test vector (Advanced mode):
+Drawing: all cells empty (256 zeros)
+PIN: "ShapeSeedTest"
+Expected entropy hex: e1f853e0267888fdfbcbc19716593599c261f060e2346a36d0ca213c1a273787
+Expected words: [ tiger secret way erupt mass leave upset join novel ready estate crime champion wealth logic educate health repair crater draw script bean task zero ]
+
+Anyone rebuilding from spec must get identical output
+
+
+ADVANCED MODE: ASCII ONLy use letters, digits, symbols (0-9, a-z, A-Z, !@#...)
+No accented chars, no emoji, no Unicode above 127.
+
 ```
-i downloaded [Argon2id](https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js)
+<img width="1128" height="902" alt="image" src="https://github.com/user-attachments/assets/c1a6eae6-25bf-4a6a-bd8e-47014cea071a" />
+<img width="1124" height="819" alt="image" src="https://github.com/user-attachments/assets/b6fbe7ff-17bc-4421-b728-165a1bd08908" />
+<img width="1355" height="951" alt="image" src="https://github.com/user-attachments/assets/e8084f25-08eb-4fac-a8ff-8c23c2bd0086" />
+<img width="1330" height="705" alt="image" src="https://github.com/user-attachments/assets/60b24e8e-2750-411c-8621-34153ad49633" />
+
+## Argon2 Library Verification
+
+argon2-bundled.min.js source:
+- Package: argon2-browser@1.18.0 by antelle
+- CDN: https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js
+- SHA256: run `sha256sum argon2-bundled.min.js` and compare with release
+
+Runtime self-test: on every page load, ShapeSeed runs a known-answer test.
+Pass: "ShapeSeedTest", salt: 32 zero bytes, mem=64MB, t=3
+Expected: e1f853e0267888fdfbcbc19716593599c261f060e2346a36d0ca213c1a273787
+Header shows ✓ ARGON2 OK, if library is intact. DO NOT USE if it shows FAIL.
+
+
+ONCE AGAIN, i am creating the empty array filled w all 0's const knownSalt = new Uint8Array(32) + pass which is "ShapeSeedTest"
+HEX result is: e1f853e0267888fdfbcbc19716593599c261f060e2346a36d0ca213c1a273787
+
+Same in my project
+<img width="640" height="155" alt="image" src="https://github.com/user-attachments/assets/97812598-3c42-4683-bca6-2de9248712ab" />
+<img width="1846" height="989" alt="image" src="https://github.com/user-attachments/assets/760d7ad8-ddda-4f3a-91ef-cc85a93db050" />
+<img width="1276" height="869" alt="image" src="https://github.com/user-attachments/assets/ca9ffc3e-1a4c-4e9a-97c0-22efd572b6ee" />
+
+i am automatically testing Argon in the header with argon2SelfTest() function ( anyone can read the code ) 
+
+<img width="1000" alt="image" src="https://github.com/user-attachments/assets/f4b44be9-6b48-4596-ac89-e1a8d2b9ebad" />
 
 ---
 i had a huge reasoning to build that <br>
