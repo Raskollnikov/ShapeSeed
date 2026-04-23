@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'none';"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'none';"
     />
     <title>PATTERN WALLET - Shape Key Generator</title>
     <style>
@@ -522,16 +522,72 @@
         grid-column: 2;
         grid-row: 1 / span 10;
       }
+      .wipe-bar {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
+        background: rgba(255, 51, 85, 0.08);
+        border: 1px solid var(--red);
+        margin-bottom: 10px;
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+      }
+      .wipe-bar.active {
+        display: flex;
+      }
+      .wipe-countdown {
+        color: var(--red);
+        min-width: 140px;
+      }
+      .wipe-cancel {
+        padding: 3px 8px;
+        background: var(--bg3);
+        border: 1px solid var(--dim);
+        color: var(--dim);
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .wipe-cancel:hover {
+        color: var(--white);
+        border-color: #555;
+      }
+      .wipe-now {
+        padding: 3px 8px;
+        background: var(--bg3);
+        border: 1px solid var(--red);
+        color: var(--red);
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
     </style>
     <script src="argon2-bundled.min.js"></script>
   </head>
   <body>
     <header style="user-select: none">
-      <div class="logo">Shape<em>Seed ( Spy Wallet ) </em></div>
+      <div class="logo">
+        Shape<em>Seed ( Spy Wallet ) </em
+        ><span
+          style="
+            font-size: 0.45rem;
+            color: var(--dim);
+            letter-spacing: 2px;
+            margin-left: 10px;
+          "
+          >v1.0.0</span
+        >
+      </div>
       <div class="hdr-r">
         <span><span class="dot"></span>100% OFFLINE</span>
         <span>ZERO NETWORK CALLS</span>
         <span>BIP39 / SPY WALLET</span>
+        <span id="selfTestStatus" style="color: var(--dim)"
+          >ARGON2 CHECKING...</span
+        >
       </div>
     </header>
 
@@ -619,7 +675,7 @@
           ></div>
         </div>
         <div class="ent-warn" id="entWarn" style="color: var(--red)">
-          ▲ DRAW A PATTERN TO BEGIN
+          DRAW A PATTERN TO BEGIN
         </div>
       </div>
 
@@ -673,6 +729,7 @@
         <div class="btn" onclick="clearCurrentLayer()">CLR LAYER</div>
         <div class="btn danger" onclick="clearAll()">CLR ALL</div>
         <div class="btn" onclick="saveStamp()">EXPORT STAMP</div>
+        <!-- <div class="btn" onclick="printRecoveryCard()">PRINT RECOVERY CARD</div> -->
       </div>
 
       <div class="right-col">
@@ -703,7 +760,12 @@
 
               <div class="adv-row">
                 <div class="adv-label">
-                  SALT / PIN <span>(memorable number, never stored)</span>
+                  SALT / PIN
+                  <span
+                    >(ASCII ONLY: use letters, digits, symbols (0-9, a-z, A-Z,
+                    !@#...) No accented chars, no emoji, no Unicode above
+                    127.)</span
+                  >
                 </div>
                 <input
                   class="adv-input"
@@ -745,11 +807,24 @@
               class="duress-info"
               style="font-size: 0.56rem; line-height: 1.7"
             >
-              Place relative to corners.<br />
-              <span style="color: var(--amber)">TL</span> 2R 1D &nbsp;
-              <span style="color: var(--amber)">TR</span> 3L 2D<br />
-              <span style="color: var(--amber)">BL</span> 1R 2U &nbsp;
-              <span style="color: var(--amber)">BR</span> 2L 1U
+              Place near corners. Record exact bit numbers below - not
+              directions.<br />
+              <span style="color: var(--red); font-size: 0.54rem"
+                >⚠ Grid mode affects bit positions. Always record numbers.</span
+              >
+            </div>
+            <div
+              id="noiseBitList"
+              style="
+                margin-top: 6px;
+                font-size: 0.58rem;
+                color: var(--amber);
+                line-height: 1.9;
+                min-height: 14px;
+                letter-spacing: 0.5px;
+              "
+            >
+              - no noise bits placed -
             </div>
           </div>
 
@@ -778,6 +853,13 @@
           <span
             >OUTPUT - <span class="hi">MERGED KEY -> BIP39 MNEMONIC</span></span
           >
+        </div>
+        <div class="wipe-bar" id="wipeBar">
+          <span class="wipe-countdown" id="wipeCountdown"
+            >OUTPUT WIPES IN: 60s</span
+          >
+          <div class="wipe-cancel" onclick="cancelWipe()">CANCEL</div>
+          <div class="wipe-now" onclick="wipeOutput()">WIPE NOW</div>
         </div>
         <div class="out-tabs">
           <div class="otab on" onclick="showOutTab('Hex', this)">
@@ -2886,11 +2968,48 @@
       if (WORDLIST.length !== 2048) {
         document.addEventListener("DOMContentLoaded", () => {
           document.body.innerHTML =
-            '<div style="color:#ff3355;font-family:monospace;padding:40px;font-size:1.2rem">▲ CRITICAL: WORDLIST INTEGRITY FAILURE (' +
+            '<div style="color:#ff3355;font-family:monospace;padding:40px;font-size:1.2rem">CRITICAL: WORDLIST INTEGRITY FAILURE (' +
             WORDLIST.length +
             "/2048). DO NOT USE THIS FILE.</div>";
         });
         throw new Error("WORDLIST integrity failure");
+      }
+
+      const ARGON2_KNOWN_GOOD =
+        "e1f853e0267888fdfbcbc19716593599c261f060e2346a36d0ca213c1a273787";
+
+      async function argon2SelfTest() {
+        const status = document.getElementById("selfTestStatus");
+        try {
+          const knownSalt = new Uint8Array(32);
+          const result = await argon2.hash({
+            pass: "ShapeSeedTest",
+            salt: knownSalt,
+            time: 3,
+            mem: 65536,
+            hashLen: 32,
+            parallelism: 1,
+            type: argon2.ArgonType.Argon2id,
+          });
+          const hex = Array.from(result.hash)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          if (hex !== ARGON2_KNOWN_GOOD) {
+            status.textContent = "ARGON2 FAIL";
+            status.style.color = "var(--red)";
+            document.body.innerHTML =
+              '<div style="color:#ff3355;font-family:monospace;padding:40px;font-size:1.2rem">CRITICAL: ARGON2 SELF-TEST FAILED. DO NOT USE.</div>';
+            throw new Error("Argon2 self-test failed");
+          }
+          status.textContent = "✓ ARGON2 OK";
+          status.style.color = "var(--green)";
+        } catch (err) {
+          if (err.message !== "Argon2 self-test failed") {
+            status.textContent = " ARGON2 ERROR";
+            status.style.color = "var(--red)";
+          }
+          throw err;
+        }
       }
 
       let COLS = 32,
@@ -2903,6 +3022,45 @@
       let showBitNums = false;
       let currentMode = "basic";
       let splitGuide = false;
+
+      let wipeTimer = null;
+      let wipeSeconds = 0;
+
+      function startWipeCountdown() {
+        cancelWipe();
+        wipeSeconds = 60;
+        document.getElementById("wipeBar").classList.add("active");
+        updateWipeDisplay();
+        wipeTimer = setInterval(() => {
+          wipeSeconds--;
+          updateWipeDisplay();
+          if (wipeSeconds <= 0) wipeOutput();
+        }, 1000);
+      }
+
+      function updateWipeDisplay() {
+        document.getElementById("wipeCountdown").textContent =
+          `OUTPUT WIPES IN: ${wipeSeconds}s`;
+      }
+
+      function cancelWipe() {
+        if (wipeTimer) {
+          clearInterval(wipeTimer);
+          wipeTimer = null;
+        }
+        document.getElementById("wipeBar").classList.remove("active");
+      }
+
+      function wipeOutput() {
+        cancelWipe();
+        document.getElementById("hexVal").textContent = "- wiped -";
+        document.getElementById("binVal").textContent = "- wiped -";
+        document.getElementById("wordGrid").innerHTML =
+          '<span style="color:var(--dim);font-size:0.65rem">- output wiped -</span>';
+        document.getElementById("stepDetail").textContent = "- wiped -";
+        document.getElementById("saltInput").value = "";
+        document.getElementById("wipeBar").classList.remove("active");
+      }
 
       const layers = {
         A: new Uint8Array(256),
@@ -3269,8 +3427,17 @@
         draw();
       }
       function setGridMode(cols, rows) {
+        const totalBits = Object.values(layers).reduce(
+          (s, l) => s + l.reduce((a, b) => a + b, 0),
+          0,
+        );
+        if (totalBits > 0) {
+          if (!confirm("Switching grid clears all layers. Continue?")) return;
+          Object.values(layers).forEach((l) => l.fill(0));
+        }
         COLS = cols;
         ROWS = rows;
+
         document.getElementById("btn32").classList.toggle("on", cols === 32);
         document.getElementById("btn16").classList.toggle("on", cols === 16);
         resize();
@@ -3313,6 +3480,15 @@
       }
 
       function updateEntropy() {
+        if (currentMode === "advanced") {
+          document.getElementById("entBar").style.width = "100%";
+          document.getElementById("entBar").style.background = "var(--purple)";
+          document.getElementById("entVal").textContent = "256 bits (Argon2id)";
+          document.getElementById("entWarn").style.color = "var(--purple)";
+          document.getElementById("entWarn").textContent =
+            "ARGON2ID ACTIVE - output is 256-bit regardless of drawing";
+          return;
+        }
         const merged = getMergedBits();
         const ent = estimateEntropy(merged);
         const pct = Math.min((ent / 256) * 100, 100);
@@ -3324,8 +3500,7 @@
         if (ent < 50) {
           bar.style.background = "var(--red)";
           warn.style.color = "var(--red)";
-          warn.textContent =
-            "▲ WEAK - simple geometric shape, easily enumerable";
+          warn.textContent = "WEAK - simple geometric shape, easily enumerable";
         } else if (ent < 90) {
           bar.style.background = "var(--amber)";
           warn.style.color = "var(--amber)";
@@ -3350,6 +3525,20 @@
           bits + " / 256 BITS";
         const nc = layers.NOISE.reduce((s, v) => s + v, 0);
         document.getElementById("noiseCount").textContent = nc + "/10";
+
+        const noiseList = document.getElementById("noiseBitList");
+        const placedBits = [];
+        for (let i = 0; i < 256; i++) {
+          if (layers.NOISE[i]) placedBits.push(i);
+        }
+        if (placedBits.length === 0) {
+          noiseList.textContent = "- no noise bits placed -";
+        } else {
+          placedBits.sort((a, b) => b - a);
+          noiseList.innerHTML = placedBits
+            .map((b) => `<span style="color:var(--amber)">bit ${b}</span>`)
+            .join(" · ");
+        }
         updateEntropy();
       }
 
@@ -3564,10 +3753,12 @@ ${chunks.map((b, i) => `<span style="color:var(--dim);font-size:.55rem">${String
             .querySelector(".output-panel")
             .scrollIntoView({ behavior: "smooth", block: "start" });
           showOutTab("Words", document.querySelectorAll(".otab")[1]);
+          startWipeCountdown();
         } catch (err) {
           document.getElementById("stepDetail").innerHTML =
-            `<span style="color:var(--red)">▲ ERROR: ${err.message || err}</span>`;
+            `<span style="color:var(--red)"> ERROR: ${err.message || err}</span>`;
           showOutTab("Steps", document.querySelectorAll(".otab")[2]);
+          startWipeCountdown();
         } finally {
           btn.textContent = "DERIVE KEY";
           btn.style.opacity = "";
@@ -3577,6 +3768,10 @@ ${chunks.map((b, i) => `<span style="color:var(--dim);font-size:.55rem">${String
 
       window.addEventListener("resize", resize);
       window.addEventListener("load", resize);
+      window.addEventListener("load", () => {
+        resize();
+        argon2SelfTest();
+      });
     </script>
   </body>
 </html>
