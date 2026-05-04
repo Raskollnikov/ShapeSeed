@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'none';"
+    />
+    <title>PATTERN WALLET - Shape Key Generator</title>
+    <link rel="stylesheet" href="shapeSeed.css" />
+    <script src="argon2-bundled.min.js"></script>
+  </head>
+  <body>
+    <header style="user-select: none">
+      <div class="logo">
+        Shape<em>Seed ( Spy Wallet ) </em
+        ><span
+          style="
+            font-size: 0.45rem;
+            color: var(--dim);
+            letter-spacing: 2px;
+            margin-left: 10px;
+          "
+          >v1.0.0</span
+        >
+      </div>
+      <div class="hdr-r">
+        <div
+          style="
+            color: red;
+            padding: 2px 6px;
+            font-size: 15px;
+            letter-spacing: 1px;
+          "
+        >
+          <span class="status-dot"></span>DEMO ONLY | USE
+          <a
+            href="https://github.com/Raskollnikov/ShapeSeed/releases/tag/1.0.0"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="offline-badge-link"
+            >OFFLINE RELEASE</a
+          >
+          FOR REAL SEEDS
+        </div>
+        <span id="selfTestStatus" style="color: var(--dim)"
+          >ARGON2 CHECKING...</span
+        >
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="panel">
+        <div class="ptitle">
+          <span
+            >DRAWING SURFACE -
+            <span class="hi" id="layerLabel">LAYER A - SHAPE 1</span></span
+          >
+          <span id="bitsSetLabel">0 / 256 BITS</span>
+        </div>
+
+        <div class="layer-tabs">
+          <div class="ltab la on" onclick="setLayer('A')">
+            ◼ LAYER A<br /><small style="font-size: 0.5rem; opacity: 0.7"
+              >SHAPE 1</small
+            >
+          </div>
+          <div class="ltab lb" onclick="setLayer('B')">
+            ◼ LAYER B<br /><small style="font-size: 0.5rem; opacity: 0.7"
+              >SHAPE 2</small
+            >
+          </div>
+          <div class="ltab lnoise" onclick="setLayer('NOISE')">
+            ◆ NOISE<br /><small style="font-size: 0.5rem; opacity: 0.7"
+              >ANCHORS</small
+            >
+          </div>
+          <div class="ltab lmerged" onclick="setLayer('MERGED')">
+            ⊕ MERGED<br /><small style="font-size: 0.5rem; opacity: 0.7"
+              >PREVIEW</small
+            >
+          </div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <span style="font-size: 0.58rem; color: var(--dim); letter-spacing: 1px"
+          >GRID:</span
+        >
+        <div class="cbtn cyon on" id="btn32" onclick="setGridMode(32, 8)">
+          32×8
+        </div>
+        <div class="cbtn cyon" id="btn16" onclick="setGridMode(16, 16)">
+          16×16
+        </div>
+        <div class="sep"></div>
+        <span style="font-size: 0.58rem; color: var(--dim); letter-spacing: 1px"
+          >BRUSH:</span
+        >
+        <div class="cbtn on" id="brush1" onclick="setBrush(1)">1×1</div>
+        <div class="cbtn" id="brush2" onclick="setBrush(2)">2×2</div>
+        <div class="cbtn" id="brush3" onclick="setBrush(3)">3×3</div>
+        <div class="sep"></div>
+        <div class="cbtn erase" id="btnErase" onclick="toggleErase()">
+          ERASE
+        </div>
+        <div class="sep"></div>
+        <div class="cbtn showbits" id="btnShowBits" onclick="toggleShowBits()">
+          BIT#
+        </div>
+        <div class="sep"></div>
+        <div class="cbtn split" id="btnSplit" onclick="toggleSplit()">
+          SPLIT
+        </div>
+      </div>
+
+      <canvas id="mainCanvas"></canvas>
+      <div class="canvas-meta">
+        <span>BIT 255 (MSB) TOP-LEFT</span>
+        <span id="cursorInfo">hover to inspect</span>
+        <span>BIT 0 (LSB) BOTTOM-RIGHT -></span>
+      </div>
+
+      <div class="ent-section">
+        <div class="ent-labels">
+          <span>ENTROPY ESTIMATE (merged A⊕B⊕NOISE)</span>
+          <span class="ev" id="entVal">~0 bits</span>
+        </div>
+        <div class="ent-outer">
+          <div
+            class="ent-inner"
+            id="entBar"
+            style="width: 0%; background: var(--red)"
+          ></div>
+        </div>
+        <div class="ent-warn" id="entWarn" style="color: var(--red)">
+          DRAW A PATTERN TO BEGIN
+        </div>
+      </div>
+
+      <div class="stamps">
+        <div class="stamp-box">
+          <div class="stamp-label">LAYER A</div>
+          <canvas
+            class="sthumb"
+            id="stampA"
+            width="64"
+            height="16"
+            style="width: 88px; height: 22px"
+          ></canvas>
+        </div>
+        <div class="stamp-box">
+          <div class="stamp-label">LAYER B</div>
+          <canvas
+            class="sthumb"
+            id="stampB"
+            width="64"
+            height="16"
+            style="width: 88px; height: 22px"
+          ></canvas>
+        </div>
+        <div class="stamp-box">
+          <div class="stamp-label">NOISE (10)</div>
+          <canvas
+            class="sthumb"
+            id="stampN"
+            width="64"
+            height="16"
+            style="width: 88px; height: 22px"
+          ></canvas>
+        </div>
+        <div class="stamp-box">
+          <div class="stamp-label">MERGED KEY</div>
+          <canvas
+            class="sthumb"
+            id="stampM"
+            width="64"
+            height="16"
+            style="width: 88px; height: 22px"
+          ></canvas>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <div class="btn primary" id="btnDerive" onclick="deriveKey()">
+          ▶ DERIVE KEY
+        </div>
+        <div class="btn" onclick="clearCurrentLayer()">CLR LAYER</div>
+        <div class="btn danger" onclick="clearAll()">CLR ALL</div>
+        <div class="btn" onclick="saveStamp()">EXPORT STAMP</div>
+        <!-- <div class="btn" onclick="printRecoveryCard()">PRINT RECOVERY CARD</div> -->
+      </div>
+
+      <div class="right-col">
+        <div class="panel">
+          <div class="ptitle">
+            <span>DERIVE <span class="hi">MODE</span></span>
+          </div>
+          <div class="mode-toggle">
+            <div
+              class="mtab basic on"
+              id="modeBasic"
+              onclick="setMode('basic')"
+            >
+              BASIC<br /><small style="font-size: 0.48rem; opacity: 0.7"
+                >XOR ONLY</small
+              >
+            </div>
+            <div class="mtab" id="modeAdv" onclick="setMode('advanced')">
+              ADVANCED<br /><small style="font-size: 0.48rem; opacity: 0.7"
+                >PIN</small
+              >
+            </div>
+          </div>
+
+          <div id="advPanel" style="display: none">
+            <div class="adv-panel">
+              <div class="adv-title">◆ ADVANCED MODE</div>
+
+              <div class="adv-row">
+                <div class="adv-label">
+                  SALT / PIN
+                  <span
+                    >(ASCII ONLY: use letters, digits, symbols (0-9, a-z, A-Z,
+                    !@#...) No accented chars, no emoji, no Unicode above
+                    127.)</span
+                  >
+                </div>
+                <input
+                  class="adv-input"
+                  id="saltInput"
+                  type="text"
+                  inputmode="text"
+                  placeholder="e.g. 19841207 or 4892"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="adv-info">
+                PIN + drawing -> same mnemonic always.<br />
+                Different PIN = completely different wallet.<br />
+                <strong>Forget PIN = permanent loss.</strong> Write it
+                physically.
+              </div>
+
+              <div class="adv-divider"></div>
+
+              <div class="adv-info">
+                <strong>BASIC:</strong> XOR bits -> BIP39 directly.<br />
+                <strong>ADVANCED:</strong> Argon2id(PIN, salt=XOR, 64MB, t=3) ->
+                BIP39.
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="ptitle">
+              <span>NOISE <span class="hi">ANCHORS</span></span>
+              <span
+                id="noiseCount"
+                style="color: var(--amber); font-size: 0.6rem"
+                >0/10</span
+              >
+            </div>
+            <div
+              class="duress-info"
+              style="font-size: 0.56rem; line-height: 1.7"
+            >
+              Place near corners. Record exact bit numbers below - not
+              directions.<br />
+              <span style="color: var(--red); font-size: 0.54rem"
+                >⚠ Grid mode affects bit positions. Always record numbers.</span
+              >
+            </div>
+            <div
+              id="noiseBitList"
+              style="
+                margin-top: 6px;
+                font-size: 0.58rem;
+                color: var(--amber);
+                line-height: 1.9;
+                min-height: 14px;
+                letter-spacing: 0.5px;
+              "
+            >
+              - no noise bits placed -
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="ptitle">
+              <span>SECURITY <span class="hi">MODEL</span></span>
+            </div>
+            <div
+              class="duress-info"
+              style="font-size: 0.56rem; line-height: 1.9"
+            >
+              <span style="color: var(--cyan)">BASIC:</span> XOR -> 11-bit ->
+              BIP39<br />
+              <span style="color: var(--cyan)">ADVANCED:</span>
+              Argon2id(PIN,salt=XOR) -> BIP39<br />
+              <span style="color: var(--cyan)">CHECKSUM:</span>
+              SHA256(entropy)[0:8]<br />
+              <span style="color: var(--cyan)">OUTPUT:</span> 24 words · 264
+              bits
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel output-panel">
+        <div class="ptitle">
+          <span
+            >OUTPUT - <span class="hi">MERGED KEY -> BIP39 MNEMONIC</span></span
+          >
+        </div>
+        <div class="wipe-bar" id="wipeBar">
+          <span class="wipe-countdown" id="wipeCountdown"
+            >OUTPUT WIPES IN: 60s</span
+          >
+          <div class="wipe-cancel" onclick="cancelWipe()">CANCEL</div>
+          <div class="wipe-now" onclick="wipeOutput()">WIPE NOW</div>
+        </div>
+        <div class="out-tabs">
+          <div class="otab on" onclick="showOutTab('Hex', this)">
+            HEX + BINARY
+          </div>
+          <div class="otab" onclick="showOutTab('Words', this)">24 WORDS</div>
+          <div class="otab" onclick="showOutTab('Steps', this)">
+            STEP DETAIL
+          </div>
+        </div>
+        <div id="outHex">
+          <div
+            style="
+              font-size: 0.6rem;
+              color: var(--dim);
+              margin-bottom: 6px;
+              letter-spacing: 1px;
+            "
+          >
+            HEXADECIMAL (32 BYTES)
+          </div>
+          <div class="hex-out" id="hexVal">- click DERIVE KEY -</div>
+          <div
+            style="
+              font-size: 0.6rem;
+              color: var(--dim);
+              margin: 10px 0 6px;
+              letter-spacing: 1px;
+            "
+          >
+            BINARY (256 BITS) - bit 255 (MSB) first
+          </div>
+          <div
+            class="hex-out"
+            id="binVal"
+            style="font-size: 0.56rem; color: var(--green); line-height: 1.6"
+          >
+            -
+          </div>
+        </div>
+        <div id="outWords" style="display: none">
+          <div class="words-grid" id="wordGrid">
+            <span style="color: var(--dim); font-size: 0.65rem"
+              >- derive key first -</span
+            >
+          </div>
+        </div>
+        <div id="outSteps" style="display: none">
+          <div class="step-detail" id="stepDetail">- derive key first -</div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>
