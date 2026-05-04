@@ -2,7 +2,11 @@
 # ShapeSeed - Spy Wallet
 
 > Draw your Bitcoin key. Remember it forever. Leave no trace.
+```
+# [TRY LIVE](https://shapeseed.vercel.app/)
 
+
+```
 !IMPORTANT
 Test vector (Advanced mode):
 Drawing: all cells empty (256 zeros)
@@ -270,6 +274,8 @@ As you see they match ( these means that both BIPS0039 + Argon2id are implemente
 
 
 generating the seed using pass is 100x more secured because it uses Argon2id
+
+[DEMO](https://shapeseed.vercel.app/)
 ---
 
 ## License
