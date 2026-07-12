@@ -5,6 +5,8 @@
 ```
 # [TRY LIVE](https://shapeseed.vercel.app/)
 
+# FOR REAL FUNDS TRY OFFFICIAL [RELEASE](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.1.1)
+
 
 ```
 !IMPORTANT
@@ -28,10 +30,6 @@ No accented chars, no emoji, no Unicode above 127.
 
 ## Argon2 Library Verification
 
-argon2-bundled.min.js source:
-- Package: argon2-browser@1.18.0 by antelle
-- CDN: https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js
-- SHA256: run `sha256sum argon2-bundled.min.js` and compare with release
 
 Runtime self-test: on every page load, ShapeSeed runs a known-answer test.
 Pass: "ShapeSeedTest", salt: 32 zero bytes, mem=64MB, t=3
