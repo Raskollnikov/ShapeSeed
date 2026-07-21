@@ -5,7 +5,7 @@
 ```
 # [TRY LIVE](https://shapeseed.vercel.app/)
 
-# FOR REAL FUNDS TRY OFFFICIAL [RELEASE](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.1.1)
+# FOR REAL FUNDS TRY OFFFICIAL [RELEASE](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.1.2)
 
 
 ```
