@@ -16,17 +16,17 @@ Recommended for all new wallets
 - File hash: `4d8e40083adf0b3d013738357d03117d57a3114cca7225c58d81da18cb9d395e`
 - Download: [ShapeSeed v2.0](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.2.0)
 
-### Legacy release - ShapeSeed v1.2
+### Legacy release - ShapeSeed v1.3
 
 **64 MiB Argon2id / t=3**
 
 use this **only if you already created a wallet with v1.x** and need the exact same derivation parameters to recover it
 
-- Download: [ShapeSeed v1.2](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.1.2)
+- Download: [ShapeSeed v1.3](https://github.com/Raskollnikov/ShapeSeed/releases/tag/v.1.3)
 
->  **IMPORTANT:** v1.2 and v2.0 use different Argon2 settings
-> the same drawing + PIN will produce **different** 24-word mnemonics in v1.2 and v2.0
-> do not mix them, if you derived a wallet with v1.2, keep using v1.2 to recover that wallet
+>  **IMPORTANT:** v1.3 and v2.0 use different Argon2 settings
+> the same drawing + PIN will produce **different** 24-word mnemonics in v1.3 and v2.0
+> do not mix them, if you derived a wallet with v1.3, keep using v1.3 to recover that wallet
 
 <br>
 <br>
